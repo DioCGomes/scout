@@ -53,7 +53,7 @@ func main() {
 	case "":
 		ecosystems = []string{"go", "maven", "pip", "npm", "composer", "gem", "crates.io"}
 	// Github Advisory DB uses crates.io for Rust dependencies
-	case "crates.io":
+	case "rust":
 		ecosystems = []string{"crates.io"}
 	// Github Advisory DB uses gem for Ruby dependencies
 	case "ruby":

@@ -14,6 +14,10 @@ Scout is a lightweight Software Composition Analysis (SCA) tool. It analyzes you
 
 **Composer**: Scans composer.json and composer.lock files for vulnerabilities in composer dependencies.
 
+**Ruby**: Scans Gemfile.lock files for vulnerabilities in gem dependencies.
+
+**Rust**: Scans Cargo.lock files for vulnerabilities in crates.io dependencies.
+
 ## Installation
 
 ### Docker
