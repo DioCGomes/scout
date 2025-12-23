@@ -14,6 +14,21 @@ func TestPatterns(t *testing.T) {
 		filename string
 		want     bool
 	}{
+		// RubyPattern
+		{
+			name:     "Gemfile.lock should match",
+			pattern:  detectors.RubyPattern,
+			filename: "Gemfile.lock",
+			want:     true,
+		},
+
+		{
+			name:     "Gemfile.lock.test should not match",
+			pattern:  detectors.RubyPattern,
+			filename: "Gemfile.lock.test",
+			want:     false,
+		},
+
 		// RustPattern
 		{
 			name:     "Cargo.lock should match",

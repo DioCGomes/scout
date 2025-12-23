@@ -49,16 +49,17 @@ func main() {
 	// ecosystems flag
 	var ecosystems []string
 
-	if *ecosystemsFlag != "" {
-		// Github Advisory DB uses crates.io for Rust dependencies
-		if *ecosystemsFlag == "rust" {
-			ecosystems = []string{"crates.io"}
-		} else {
-			ecosystems = strings.Split(*ecosystemsFlag, ",")
-		}
-	} else {
-		// default ecosystems
-		ecosystems = []string{"go", "maven", "pip", "npm", "composer"}
+	switch *ecosystemsFlag {
+	case "":
+		ecosystems = []string{"go", "maven", "pip", "npm", "composer", "gem", "crates.io"}
+	// Github Advisory DB uses crates.io for Rust dependencies
+	case "crates.io":
+		ecosystems = []string{"crates.io"}
+	// Github Advisory DB uses gem for Ruby dependencies
+	case "ruby":
+		ecosystems = []string{"gem"}
+	default:
+		ecosystems = strings.Split(*ecosystemsFlag, ",")
 	}
 
 	// exclude directories flag

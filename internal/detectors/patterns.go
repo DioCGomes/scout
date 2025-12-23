@@ -9,6 +9,7 @@ type FilePattern struct {
 
 // patterns for dependency files of various ecosystems
 var (
+	RubyPattern     = FilePattern{Regex: regexp.MustCompile(`^Gemfile\.lock$`), Ecosystem: "gem"}
 	RustPattern     = FilePattern{Regex: regexp.MustCompile(`^Cargo\.lock$`), Ecosystem: "crates.io"}
 	GoPattern       = FilePattern{Regex: regexp.MustCompile(`^go.mod$`), Ecosystem: "go"}
 	MavenPattern    = FilePattern{Regex: regexp.MustCompile(`^pom.xml$`), Ecosystem: "maven"}
@@ -19,6 +20,7 @@ var (
 
 // DefaultFilePatterns map holds the file patterns indexed by ecosystem, ecosystem is essentially duplicated but helps a lot in matching files to ecosystems
 var DefaultFilePatterns = map[string]FilePattern{
+	"gem":       RubyPattern,
 	"crates.io": RustPattern,
 	"go":        GoPattern,
 	"maven":     MavenPattern,
