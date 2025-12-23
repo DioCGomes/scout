@@ -1,0 +1,21 @@
+version = 3
+
+[[package]]
+name = "hyper"
+version = "0.14.18"
+
+[[package]]
+name = "regex"
+version = "1.5.4"
+
+[[package]]
+name = "smallvec"
+version = "0.6.10"
+
+[[package]]
+name = "tokio"
+version = "1.8.0"
+
+[[package]]
+name = "chrono"
+version = "0.4.19"

@@ -1,8 +1,9 @@
 package detectors_test
 
 import (
-	"github.com/mlw157/scout/internal/detectors"
 	"testing"
+
+	"github.com/mlw157/scout/internal/detectors"
 )
 
 // todo regex tests
@@ -13,6 +14,21 @@ func TestPatterns(t *testing.T) {
 		filename string
 		want     bool
 	}{
+		// RustPattern
+		{
+			name:     "Cargo.lock should match",
+			pattern:  detectors.RustPattern,
+			filename: "Cargo.lock",
+			want:     true,
+		},
+
+		{
+			name:     "Cargo.lock.test should not match",
+			pattern:  detectors.RustPattern,
+			filename: "Cargo.lock.test",
+			want:     false,
+		},
+
 		// GoPattern
 		{
 			name:     "go.mod should match",

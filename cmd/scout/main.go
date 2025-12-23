@@ -2,13 +2,14 @@ package main
 
 import (
 	"flag"
+	"log"
+	"strings"
+
 	"github.com/mlw157/scout/internal/detectors/filesystem"
 	"github.com/mlw157/scout/internal/engine"
 	"github.com/mlw157/scout/internal/exporters/dojoexporter"
 	"github.com/mlw157/scout/internal/exporters/htmlexporter"
 	"github.com/mlw157/scout/internal/exporters/jsonexporter"
-	"log"
-	"strings"
 )
 
 func main() {
@@ -49,7 +50,12 @@ func main() {
 	var ecosystems []string
 
 	if *ecosystemsFlag != "" {
-		ecosystems = strings.Split(*ecosystemsFlag, ",")
+		// Github Advisory DB uses crates.io for Rust dependencies
+		if *ecosystemsFlag == "rust" {
+			ecosystems = []string{"crates.io"}
+		} else {
+			ecosystems = strings.Split(*ecosystemsFlag, ",")
+		}
 	} else {
 		// default ecosystems
 		ecosystems = []string{"go", "maven", "pip", "npm", "composer"}
