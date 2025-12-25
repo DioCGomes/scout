@@ -1,0 +1,107 @@
+version: 2
+
+project_name: scout
+
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+
+builds:
+  - id: scout
+    main: ./cmd/scout
+    binary: scout
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+    overrides:
+      - goos: linux
+        goarch: amd64
+        env:
+          - CC=x86_64-linux-gnu-gcc
+      - goos: linux
+        goarch: arm64
+        env:
+          - CC=aarch64-linux-gnu-gcc
+      - goos: darwin
+        goarch: amd64
+        env:
+          - CC=o64-clang
+      - goos: darwin
+        goarch: arm64
+        env:
+          - CC=oa64-clang
+
+archives:
+  - id: scout
+    builds:
+      - scout
+    format: tar.gz
+    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: 'Features'
+      regexp: '^.*?feat(\(.+\))?\!?:.+$'
+      order: 0
+    - title: 'Bug Fixes'
+      regexp: '^.*?fix(\(.+\))?\!?:.+$'
+      order: 1
+    - title: 'Documentation'
+      regexp: '^.*?docs(\(.+\))?\!?:.+$'
+      order: 2
+    - title: 'Maintenance'
+      regexp: '^.*?(chore|refactor|style|test|ci|build)(\(.+\))?\!?:.+$'
+      order: 3
+    - title: 'Other'
+      order: 999
+  filters:
+    exclude:
+      - '^Merge'
+
+release:
+  github:
+    owner: mlw157
+    name: scout
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Scout {{ .Tag }}
+    
+    Welcome to this new release of Scout! 🔍
+  footer: |
+    ---
+    
+    **Full Changelog**: https://github.com/{{ .Env.GITHUB_REPOSITORY }}/compare/{{ .PreviousTag }}...{{ .Tag }}
+    
+    ## Installation
+    
+    ### Binary
+    Download the appropriate binary for your platform from the assets below.
+    
+    ### Docker
+    ```bash
+    docker pull ghcr.io/mlw157/scout:{{ .Tag }}
+    ```

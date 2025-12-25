@@ -13,7 +13,12 @@ import (
 	"github.com/mlw157/scout/internal/exporters/jsonexporter"
 )
 
-const version = "0.1.0"
+// Version information - injected at build time via ldflags
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
 const art = `
    _____                  __ 

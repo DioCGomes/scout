@@ -12,6 +12,8 @@ Scout is a lightweight Software Composition Analysis (SCA) tool. It analyzes you
 
 ## Installation
 
+**Supported platforms:** Linux and macOS. Windows users should use Docker.
+
 ### Docker
 
 ```bash
