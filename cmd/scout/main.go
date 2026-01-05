@@ -10,6 +10,7 @@ import (
 	"github.com/mlw157/scout/internal/exporters/dojoexporter"
 	"github.com/mlw157/scout/internal/exporters/htmlexporter"
 	"github.com/mlw157/scout/internal/exporters/jsonexporter"
+	"github.com/mlw157/scout/internal/exporters/sarifexporter"
 )
 
 func main() {
@@ -31,7 +32,7 @@ func main() {
 
 	ecosystemsFlag := flag.String("ecosystems", "", "Comma-separated list of ecosystems to scan (e.g., go,pip,maven)")
 	excludeDirsFlag := flag.String("exclude", "", "Comma-separated list of directory and file names to exclude (e.g., node_modules,.git,requirements-dev.txt)")
-	exportFormatFlag := flag.String("format", "json", "Export format: 'json' or 'dojo' (DefectDojo format)")
+	exportFormatFlag := flag.String("format", "json", "Export format: 'json', 'html', 'sarif', or 'dojo' (DefectDojo format)")
 	outputFileFlag := flag.String("output", "", "Output file path (defaults to scout_report.[format])")
 	tokenFlag := flag.String("token", "", "GitHub token for authenticated API requests (optional and deprecated)")
 	sequentialFlag := flag.Bool("sequential", false, "Processes each file individually without concurrent execution (not recommended)")
@@ -85,27 +86,35 @@ func main() {
 		LatestMode:     *updateFlag,
 	}
 
-	// if export flag is set, create a exporter
-	// todo make multiple export types, other than json and dojo
+	// if export flag is set, create an exporter
 	outputFile := *outputFileFlag
-	if outputFile == "" {
-		if *exportFormatFlag == "dojo" {
-			outputFile = "scout_report_dojo.json"
-		} else if *exportFormatFlag == "html" {
-			outputFile = "scout_report.html"
-		} else {
-			outputFile = "scout_report.json"
-		}
-	}
 
 	switch *exportFormatFlag {
 	case "dojo":
+		if outputFile == "" {
+			outputFile = "scout_report_dojo.json"
+		}
 		config.Exporter = dojoexporter.NewDojoExporter(outputFile)
 		log.Printf("Will export results in DefectDojo format to %s\n", outputFile)
+
+	case "sarif":
+		if outputFile == "" {
+			outputFile = "scout_report.sarif"
+		}
+		config.Exporter = sarifexporter.NewSARIFExporter(outputFile)
+		log.Printf("Will export results in SARIF format to %s\n", outputFile)
+
 	case "html":
+		if outputFile == "" {
+			outputFile = "scout_report.html"
+		}
 		config.Exporter = htmlexporter.NewHTMLEXporter(outputFile)
 		log.Printf("Will export results in HTML format to %s\n", outputFile)
-	default:
+
+	default: // json
+		if outputFile == "" {
+			outputFile = "scout_report.json"
+		}
 		config.Exporter = jsonexporter.NewJSONExporter(outputFile)
 		log.Printf("Will export results in JSON format to %s\n", outputFile)
 	}
