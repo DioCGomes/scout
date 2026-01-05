@@ -50,11 +50,17 @@ func main() {
 	// ecosystems flag
 	var ecosystems []string
 
-	if *ecosystemsFlag != "" {
+	switch *ecosystemsFlag {
+	case "":
+		ecosystems = []string{"go", "maven", "pip", "npm", "composer", "gem", "crates.io"}
+	// Github Advisory DB uses crates.io for Rust dependencies
+	case "rust":
+		ecosystems = []string{"crates.io"}
+	// Github Advisory DB uses gem for Ruby dependencies
+	case "ruby":
+		ecosystems = []string{"gem"}
+	default:
 		ecosystems = strings.Split(*ecosystemsFlag, ",")
-	} else {
-		// default ecosystems
-		ecosystems = []string{"go", "maven", "pip", "npm", "composer"}
 	}
 
 	// exclude directories flag
