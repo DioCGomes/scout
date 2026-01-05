@@ -10,4 +10,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 _Changes in development that will be included in the next release._
 
 <!-- New releases will be automatically added above this line -->
-
