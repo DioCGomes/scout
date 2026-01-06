@@ -2,7 +2,8 @@ package main
 
 import (
 	"flag"
-	"log"
+	"fmt"
+	"os"
 	"strings"
 
 	"github.com/mlw157/scout/internal/detectors/filesystem"
@@ -13,153 +14,217 @@ import (
 	"github.com/mlw157/scout/internal/exporters/sarifexporter"
 )
 
-func main() {
+// Version information - injected at build time via ldflags
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
-	art := `
+const art = `
    _____                  __ 
   / ___/_________  __  __/ /_
   \__ \/ ___/ __ \/ / / / __/
  ___/ / /__/ /_/ / /_/ / /_  
 /____/\___/\____/\__,_/\__/
-
 `
-	originalFlags := log.Flags()
-	log.SetFlags(0)
 
-	log.Printf(art)
+func main() {
+	// Define flags with both long and short versions
+	var (
+		ecosystemsFlag   string
+		excludeDirsFlag  string
+		exportFormatFlag string
+		outputFileFlag   string
+		tokenFlag        string
+		sequentialFlag   bool
+		updateFlag       bool
+		versionFlag      bool
+		helpFlag         bool
+	)
 
-	log.SetFlags(originalFlags)
+	// Long flags
+	flag.StringVar(&ecosystemsFlag, "ecosystems", "", "Comma-separated list of ecosystems to scan (e.g., go,pip,maven)")
+	flag.StringVar(&excludeDirsFlag, "exclude", "", "Comma-separated list of directory and file names to exclude")
+	flag.StringVar(&exportFormatFlag, "format", "json", "Export format: json, html, sarif, or dojo (DefectDojo)")
+	flag.StringVar(&outputFileFlag, "output", "", "Output file path (defaults to scout_report.[format])")
+	flag.StringVar(&tokenFlag, "token", "", "GitHub token for authenticated API requests (deprecated)")
+	flag.BoolVar(&sequentialFlag, "sequential", false, "Process files sequentially instead of concurrently")
+	flag.BoolVar(&updateFlag, "update-db", false, "Download and use the latest version of scout database")
+	flag.BoolVar(&versionFlag, "version", false, "Print version and exit")
+	flag.BoolVar(&helpFlag, "help", false, "Show help message")
 
-	ecosystemsFlag := flag.String("ecosystems", "", "Comma-separated list of ecosystems to scan (e.g., go,pip,maven)")
-	excludeDirsFlag := flag.String("exclude", "", "Comma-separated list of directory and file names to exclude (e.g., node_modules,.git,requirements-dev.txt)")
-	exportFormatFlag := flag.String("format", "json", "Export format: 'json', 'html', 'sarif', or 'dojo' (DefectDojo format)")
-	outputFileFlag := flag.String("output", "", "Output file path (defaults to scout_report.[format])")
-	tokenFlag := flag.String("token", "", "GitHub token for authenticated API requests (optional and deprecated)")
-	sequentialFlag := flag.Bool("sequential", false, "Processes each file individually without concurrent execution (not recommended)")
-	updateFlag := flag.Bool("update-db", false, "Download and use the latest version of scout database")
+	// Short flag aliases
+	flag.StringVar(&ecosystemsFlag, "e", "", "Alias for --ecosystems")
+	flag.StringVar(&excludeDirsFlag, "x", "", "Alias for --exclude")
+	flag.StringVar(&exportFormatFlag, "f", "json", "Alias for --format")
+	flag.StringVar(&outputFileFlag, "o", "", "Alias for --output")
+	flag.BoolVar(&versionFlag, "v", false, "Alias for --version")
+	flag.BoolVar(&helpFlag, "h", false, "Alias for --help")
+
+	flag.Usage = func() {
+		fmt.Fprint(os.Stderr, art)
+		fmt.Fprintln(os.Stderr, "Scout - Dependency Vulnerability Scanner")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Usage:")
+		fmt.Fprintln(os.Stderr, "  scout [options] <directory>")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Examples:")
+		fmt.Fprintln(os.Stderr, "  scout .                              # Scan current directory")
+		fmt.Fprintln(os.Stderr, "  scout --ecosystems go,npm ./app      # Scan specific ecosystems")
+		fmt.Fprintln(os.Stderr, "  scout --format html -o report.html . # Export as HTML")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "Options:")
+		flag.PrintDefaults()
+	}
 
 	flag.Parse()
 
+	if helpFlag {
+		flag.Usage()
+		os.Exit(0)
+	}
+
+	if versionFlag {
+		fmt.Printf("scout v%s\n", version)
+		os.Exit(0)
+	}
+
+	fmt.Print(art)
+
 	args := flag.Args()
 	if len(args) < 1 {
-		log.Fatal("Please provide a root directory to scan")
+		fmt.Fprintln(os.Stderr, "Error: missing required argument <directory>")
+		fmt.Fprintln(os.Stderr)
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	rootDir := args[0]
 
-	// ecosystems flag
+	// Validate directory exists
+	info, err := os.Stat(rootDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Cannot access path: %s\n", err)
+		os.Exit(1)
+	}
+	if !info.IsDir() {
+		fmt.Fprintf(os.Stderr, "Path is not a directory: %s\n", rootDir)
+		os.Exit(1)
+	}
+
+	// Warn about deprecated token flag
+	if tokenFlag != "" {
+		fmt.Println("⚠️  Warning: --token flag is deprecated and will be removed in a future version")
+	}
+
+	// Parse ecosystems
 	var ecosystems []string
-
-	switch *ecosystemsFlag {
-	case "":
-		ecosystems = []string{"go", "maven", "pip", "npm", "composer", "gem", "crates.io"}
-	// Github Advisory DB uses crates.io for Rust dependencies
-	case "rust":
-		ecosystems = []string{"crates.io"}
-	// Github Advisory DB uses gem for Ruby dependencies
-	case "ruby":
-		ecosystems = []string{"gem"}
-	default:
-		ecosystems = strings.Split(*ecosystemsFlag, ",")
-	}
-
-	// exclude directories flag
-	var excludeDirs []string
-
-	if *excludeDirsFlag != "" {
-		excludeDirs = strings.Split(*excludeDirsFlag, ",")
+	if ecosystemsFlag != "" {
+		ecosystems = strings.Split(ecosystemsFlag, ",")
 	} else {
-		excludeDirs = []string{}
+		ecosystems = []string{"go", "maven", "pip", "npm", "composer", "ruby", "rust"}
 	}
 
-	log.Printf("Path to scan: %s\n", rootDir)
-	log.Printf("Ecosystems to scan: %v\n", ecosystems)
-	log.Printf("Excluded directories: %v\n", excludeDirs)
+	// Parse exclude directories
+	var excludeDirs []string
+	if excludeDirsFlag != "" {
+		excludeDirs = strings.Split(excludeDirsFlag, ",")
+	}
+
+	// Validate export format
+	validFormats := map[string]bool{"json": true, "dojo": true, "html": true, "sarif": true}
+	if !validFormats[exportFormatFlag] {
+		fmt.Fprintf(os.Stderr, "Invalid format '%s'. Valid options: json, html, sarif, dojo\n", exportFormatFlag)
+		os.Exit(1)
+	}
+
+	fmt.Println("Path to scan:", rootDir)
+	fmt.Println("Ecosystems:", ecosystems)
+	if len(excludeDirs) > 0 {
+		fmt.Println("Excluded:", excludeDirs)
+	}
 
 	detector := filesystem.NewFSDetector()
 
 	config := engine.Config{
 		Ecosystems:     ecosystems,
 		ExcludeFiles:   excludeDirs,
-		Token:          *tokenFlag,
-		SequentialMode: *sequentialFlag,
-		LatestMode:     *updateFlag,
+		Token:          tokenFlag,
+		SequentialMode: sequentialFlag,
+		LatestMode:     updateFlag,
 	}
 
-	// if export flag is set, create an exporter
-	outputFile := *outputFileFlag
+	formatExtensions := map[string]string{
+		"json":  ".json",
+		"dojo":  ".json",
+		"html":  ".html",
+		"sarif": ".sarif.json",
+	}
+	ext := formatExtensions[exportFormatFlag]
 
-	switch *exportFormatFlag {
-	case "dojo":
-		if outputFile == "" {
+	outputFile := outputFileFlag
+	if outputFile == "" {
+		// Default filename
+		switch exportFormatFlag {
+		case "dojo":
 			outputFile = "scout_report_dojo.json"
-		}
-		config.Exporter = dojoexporter.NewDojoExporter(outputFile)
-		log.Printf("Will export results in DefectDojo format to %s\n", outputFile)
-
-	case "sarif":
-		if outputFile == "" {
-			outputFile = "scout_report.sarif"
-		}
-		config.Exporter = sarifexporter.NewSARIFExporter(outputFile)
-		log.Printf("Will export results in SARIF format to %s\n", outputFile)
-
-	case "html":
-		if outputFile == "" {
+		case "html":
 			outputFile = "scout_report.html"
-		}
-		config.Exporter = htmlexporter.NewHTMLEXporter(outputFile)
-		log.Printf("Will export results in HTML format to %s\n", outputFile)
-
-	default: // json
-		if outputFile == "" {
+		case "sarif":
+			outputFile = "scout_report.sarif.json"
+		default:
 			outputFile = "scout_report.json"
 		}
-		config.Exporter = jsonexporter.NewJSONExporter(outputFile)
-		log.Printf("Will export results in JSON format to %s\n", outputFile)
+	} else if !strings.HasSuffix(outputFile, ext) {
+		// Append correct extension if missing
+		outputFile += ext
 	}
+
+	switch exportFormatFlag {
+	case "dojo":
+		config.Exporter = dojoexporter.NewDojoExporter(outputFile)
+		fmt.Printf("Exporting to DefectDojo format: %s\n", outputFile)
+	case "html":
+		config.Exporter = htmlexporter.NewHTMLEXporter(outputFile)
+		fmt.Printf("Exporting to HTML format: %s\n", outputFile)
+	case "sarif":
+		config.Exporter = sarifexporter.NewSARIFExporter(outputFile)
+		fmt.Printf("Exporting to SARIF format: %s\n", outputFile)
+	default:
+		config.Exporter = jsonexporter.NewJSONExporter(outputFile)
+		fmt.Printf("Exporting to JSON format: %s\n", outputFile)
+	}
+
+	fmt.Println()
 
 	scanEngine := engine.NewEngine(detector, config)
 
 	scanResults, err := scanEngine.Scan(rootDir)
 	if err != nil {
-		log.Fatalf("Scan failed: %v", err)
+		fmt.Fprintf(os.Stderr, "Scan failed: %v\n", err)
+		os.Exit(1)
 	}
 
-	log.Printf("Scan results for directory: %s\n\n", rootDir)
+	fmt.Printf("\nScan results for: %s\n\n", rootDir)
 
 	totalVulnerabilities := 0
 	totalPackages := 0
 
 	for _, result := range scanResults {
-		/*
-			log.Println("File: " + result.SourceFile)
-			log.Printf("Found %d vulnerabilities in %d packages\n\n", len(result.Vulnerabilities), len(result.Dependencies))
-
-			if len(result.Vulnerabilities) > 0 {
-				log.Println("Vulnerabilities found:")
-				fmt.Println()
-				for _, vulnerability := range result.Vulnerabilities {
-					log.Printf("Package: %s@%s\n", vulnerability.Dependency.Name, vulnerability.Dependency.Version)
-					log.Printf("CVE: %s\n", vulnerability.CVE)
-					log.Printf("Severity: %s\n", vulnerability.Severity)
-					log.Printf("Summary: %s\n", vulnerability.Summary)
-					log.Printf("Upgrade to version %s in order to fix\n", vulnerability.FirstPatchedVersion)
-					fmt.Println()
-
-				}
-			}
-		*/
 		totalPackages += len(result.Dependencies)
 		totalVulnerabilities += len(result.Vulnerabilities)
 	}
-	log.Println("────────────────────────────────────────")
-	log.Printf("Scan completed: %d vulnerabilities found in %d packages.\n", totalVulnerabilities, totalPackages)
-	if totalVulnerabilities > 0 {
-		log.Println("⚠️  Review the exported report for details.")
-	} else {
-		log.Println("✅ No vulnerabilities detected.")
-	}
-	log.Println("────────────────────────────────────────")
 
+	fmt.Println("────────────────────────────────────────")
+	fmt.Printf("Scan completed: %d vulnerabilities found in %d packages.\n", totalVulnerabilities, totalPackages)
+
+	if totalVulnerabilities > 0 {
+		fmt.Println("⚠️  Review the exported report for details.")
+		fmt.Println("────────────────────────────────────────")
+		os.Exit(1)
+	}
+
+	fmt.Println("✅ No vulnerabilities detected.")
+	fmt.Println("────────────────────────────────────────")
 }

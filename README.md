@@ -20,6 +20,8 @@ Scout is a lightweight Software Composition Analysis (SCA) tool. It analyzes you
 
 ## Installation
 
+**Supported platforms:** Linux and macOS. Windows users should use Docker.
+
 ### Docker
 
 ```bash
@@ -39,57 +41,43 @@ Once you've downloaded the precompiled binary or built the image, you can run Sc
 ### Database Storage
 
 Scout stores its database in the ~/.cache/scout/db directory by default. If the database is not found or is missing, Scout will automatically download the required database files.
-You can manually update the database using the `-update-db` flag if needed.
+You can manually update the database using the `--update-db` flag if needed.
 
 ### Command-Line Flags
 
-| Flag | Description | Default | Example |
-| --- | --- | --- | --- |
-| `-ecosystems` | Ecosystems to scan | `all supported ones` | `-ecosystems maven,pip` |
-| `-exclude` | File/Directory patterns to exclude | - | `-exclude node_modules,.git` |
-| `-format` | Export format (options: dojo, html, json) | `json` | `-format dojo` |
-| `-output` | Output file path | `[format]` | `-output custom_report.json` |
-| `-update-db` | Fetch the latest Scout database | `false` | `-update-db` |
+| Flag | Short | Description | Default | Example |
+| --- | --- | --- | --- | --- |
+| `--ecosystems` | `-e` | Ecosystems to scan | `all supported` | `-e maven,pip` |
+| `--exclude` | `-x` | File/Directory patterns to exclude | - | `-x node_modules,.git` |
+| `--format` | `-f` | Export format (json, html, sarif, dojo) | `json` | `-f html` |
+| `--output` | `-o` | Output file path (extension auto-added) | `scout_report.[ext]` | `-o results` |
+| `--update-db` | | Fetch the latest Scout database | `false` | `--update-db` |
+| `--version` | `-v` | Print version and exit | | `-v` |
+| `--help` | `-h` | Show help message | | `-h` |
 
-### Example
-
-Default
+### Examples
 
 ```bash
+# Scan current directory
 scout .
+
+# Scan for specific ecosystems only
+scout -e maven,pip .
+
+# Fetch the latest Scout database
+scout --update-db .
+
+# Export results to HTML format
+scout -f html .
+
+# Export with custom filename (extension auto-added based on format)
+scout -f html -o my_report .
+
+# Exclude directories or files
+scout -x node_modules,testfolder .
 ```
 
-Scan current directory for only maven dependencies
-
-```bash
-scout -ecosystems maven .
-```
-
-Fetch the latest Scout database
-
-```bash
-scout -update-db .
-```
-
-Export results to defect dojo format
-
-```bash
-scout -format dojo .
-```
-
-Export results with a custom report name
-
-```bash
-scout -format html -output custom_name.html .
-```
-
-Exclude subdirectories or files
-
-```bash
-scout -exclude node_modules,testfolder .
-```
-
-### Running via Docker
+Running via Docker:
 
 ```bash
 docker run --rm -v "${PWD}:/scan" scout:latest [flags] .
@@ -97,7 +85,7 @@ docker run --rm -v "${PWD}:/scan" scout:latest [flags] .
 
 ### GitHub Actions Example
 
-#### Run Scout
+Run Scout:
 
 ```yaml
 name: "Scout"
@@ -119,7 +107,7 @@ jobs:
         run: ./scout -exclude node_modules .
 ```
 
-#### Send results to DefectDojo
+Send results to DefectDojo:
 
 ```yaml
 name: "Scout to Dojo"
@@ -168,14 +156,11 @@ Scout is built using a modular, dependency injection-based architecture that all
 ### Interfaces
 
 - **Parser**: Parsers are responsible for analyzing dependency files and extracting dependencies. (e.g GoParser, MavenParser, NpmParser)
-  
 - **Advisory**: Advisories are services that analyze dependencies to identify vulnerabilities. (e.g GitHub Advisory Database, Snyk Vulnerability Database, NIST Vulnerability Database)
-
 - **Detector**: Detectors are responsible for finding dependency files to scan. (e.g Filesystem Detector, GitRepositoryDetector)
-
 - **Exporter**: Exporters take the scan results and present them in the desired format. (e.g JSONExporter, HTMLExporter, CSVExporter)
-  
-  > **Note**: Some examples listed above are theoretical and not yet implemented. They are provided to illustrate potential future extensions of the system.
+
+> **Note**: Some examples listed above are theoretical and not yet implemented. They are provided to illustrate potential future extensions of the system.
 
 ## Next Features
 
