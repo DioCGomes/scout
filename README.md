@@ -20,6 +20,8 @@ Scout is a lightweight Software Composition Analysis (SCA) tool. It analyzes you
 
 ## Installation
 
+**Supported platforms:** Linux and macOS. Windows users should use Docker.
+
 ### Docker
 
 ```bash
@@ -47,7 +49,7 @@ You can manually update the database using the `--update-db` flag if needed.
 | --- | --- | --- | --- | --- |
 | `--ecosystems` | `-e` | Ecosystems to scan | `all supported` | `-e maven,pip` |
 | `--exclude` | `-x` | File/Directory patterns to exclude | - | `-x node_modules,.git` |
-| `--format` | `-f` | Export format (json, html, dojo) | `json` | `-f html` |
+| `--format` | `-f` | Export format (json, html, sarif, dojo) | `json` | `-f html` |
 | `--output` | `-o` | Output file path (extension auto-added) | `scout_report.[ext]` | `-o results` |
 | `--update-db` | | Fetch the latest Scout database | `false` | `--update-db` |
 | `--version` | `-v` | Print version and exit | | `-v` |

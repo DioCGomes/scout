@@ -11,6 +11,7 @@ import (
 	"github.com/mlw157/scout/internal/exporters/dojoexporter"
 	"github.com/mlw157/scout/internal/exporters/htmlexporter"
 	"github.com/mlw157/scout/internal/exporters/jsonexporter"
+	"github.com/mlw157/scout/internal/exporters/sarifexporter"
 )
 
 // Version information - injected at build time via ldflags
@@ -45,7 +46,7 @@ func main() {
 	// Long flags
 	flag.StringVar(&ecosystemsFlag, "ecosystems", "", "Comma-separated list of ecosystems to scan (e.g., go,pip,maven)")
 	flag.StringVar(&excludeDirsFlag, "exclude", "", "Comma-separated list of directory and file names to exclude")
-	flag.StringVar(&exportFormatFlag, "format", "json", "Export format: json, html, or dojo (DefectDojo)")
+	flag.StringVar(&exportFormatFlag, "format", "json", "Export format: json, html, sarif, or dojo (DefectDojo)")
 	flag.StringVar(&outputFileFlag, "output", "", "Output file path (defaults to scout_report.[format])")
 	flag.StringVar(&tokenFlag, "token", "", "GitHub token for authenticated API requests (deprecated)")
 	flag.BoolVar(&sequentialFlag, "sequential", false, "Process files sequentially instead of concurrently")
@@ -122,7 +123,7 @@ func main() {
 	if ecosystemsFlag != "" {
 		ecosystems = strings.Split(ecosystemsFlag, ",")
 	} else {
-		ecosystems = []string{"go", "maven", "pip", "npm", "composer"}
+		ecosystems = []string{"go", "maven", "pip", "npm", "composer", "ruby", "rust"}
 	}
 
 	// Parse exclude directories
@@ -132,9 +133,9 @@ func main() {
 	}
 
 	// Validate export format
-	validFormats := map[string]bool{"json": true, "dojo": true, "html": true}
+	validFormats := map[string]bool{"json": true, "dojo": true, "html": true, "sarif": true}
 	if !validFormats[exportFormatFlag] {
-		fmt.Fprintf(os.Stderr, "Invalid format '%s'. Valid options: json, dojo, html\n", exportFormatFlag)
+		fmt.Fprintf(os.Stderr, "Invalid format '%s'. Valid options: json, html, sarif, dojo\n", exportFormatFlag)
 		os.Exit(1)
 	}
 
@@ -155,9 +156,10 @@ func main() {
 	}
 
 	formatExtensions := map[string]string{
-		"json": ".json",
-		"dojo": ".json",
-		"html": ".html",
+		"json":  ".json",
+		"dojo":  ".json",
+		"html":  ".html",
+		"sarif": ".sarif.json",
 	}
 	ext := formatExtensions[exportFormatFlag]
 
@@ -169,6 +171,8 @@ func main() {
 			outputFile = "scout_report_dojo.json"
 		case "html":
 			outputFile = "scout_report.html"
+		case "sarif":
+			outputFile = "scout_report.sarif.json"
 		default:
 			outputFile = "scout_report.json"
 		}
@@ -179,17 +183,14 @@ func main() {
 
 	switch exportFormatFlag {
 	case "dojo":
-		if outputFile == "" {
-			outputFile = "scout_report_dojo.json"
-		}
 		config.Exporter = dojoexporter.NewDojoExporter(outputFile)
 		fmt.Printf("Exporting to DefectDojo format: %s\n", outputFile)
 	case "html":
-		if outputFile == "" {
-			outputFile = "scout_report.html"
-		}
 		config.Exporter = htmlexporter.NewHTMLEXporter(outputFile)
 		fmt.Printf("Exporting to HTML format: %s\n", outputFile)
+	case "sarif":
+		config.Exporter = sarifexporter.NewSARIFExporter(outputFile)
+		fmt.Printf("Exporting to SARIF format: %s\n", outputFile)
 	default:
 		config.Exporter = jsonexporter.NewJSONExporter(outputFile)
 		fmt.Printf("Exporting to JSON format: %s\n", outputFile)
