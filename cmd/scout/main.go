@@ -179,9 +179,15 @@ func main() {
 
 	switch exportFormatFlag {
 	case "dojo":
+		if outputFile == "" {
+			outputFile = "scout_report_dojo.json"
+		}
 		config.Exporter = dojoexporter.NewDojoExporter(outputFile)
 		fmt.Printf("Exporting to DefectDojo format: %s\n", outputFile)
 	case "html":
+		if outputFile == "" {
+			outputFile = "scout_report.html"
+		}
 		config.Exporter = htmlexporter.NewHTMLEXporter(outputFile)
 		fmt.Printf("Exporting to HTML format: %s\n", outputFile)
 	default:

@@ -4,15 +4,21 @@ Scout is a lightweight Software Composition Analysis (SCA) tool. It analyzes you
 
 ## Ecosystems Supported so far
 
-- **Go**: Scans go.mod files for vulnerabilities in Go dependencies.
-- **Maven**: Scans pom.xml files for vulnerabilities in Maven dependencies.
-- **Python**: Scans requirements.txt files for vulnerabilities in pip dependencies.
-- **NPM**: Scans package.json, package-lock.json and yarn.lock files for vulnerabilities in npm dependencies.
-- **Composer**: Scans composer.json and composer.lock files for vulnerabilities in composer dependencies.
+**Go**: Scans go.mod files for vulnerabilities in Go dependencies.
+
+**Maven**: Scans pom.xml files for vulnerabilities in Maven dependencies.
+
+**Python**: Scans requirements.txt files for vulnerabilities in pip dependencies.
+
+**NPM**: Scans package.json, package-lock.json and yarn.lock files for vulnerabilities in npm dependencies.
+
+**Composer**: Scans composer.json and composer.lock files for vulnerabilities in composer dependencies.
+
+**Ruby**: Scans Gemfile.lock files for vulnerabilities in gem dependencies.
+
+**Rust**: Scans Cargo.lock files for vulnerabilities in crates.io dependencies.
 
 ## Installation
-
-**Supported platforms:** Linux and macOS. Windows users should use Docker.
 
 ### Docker
 
@@ -142,6 +148,7 @@ Scout is built using a modular, dependency injection-based architecture that all
 ### Core Components
 
 - **Engine**: The main orchestrator that combines all components and runs the scanning process. It coordinates detectors, scanners, and exporters together.
+  
 - **Scanner**: Combines a parser and an advisory service to scan dependencies and identify vulnerabilities.
 
 ### Interfaces
