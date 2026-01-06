@@ -14,12 +14,8 @@ import (
 	"github.com/mlw157/scout/internal/exporters/sarifexporter"
 )
 
-// Version information - injected at build time via ldflags
-var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
-)
+// version is injected at build time via ldflags
+var version = "dev"
 
 const art = `
    _____                  __ 
